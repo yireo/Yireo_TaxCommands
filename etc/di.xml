@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="yireo_taxcommands_tax_rate_list" xsi:type="object">
+                    Yireo\TaxCommands\Console\Command\TaxRateListCommand
+                </item>
+                <item name="yireo_taxcommands_tax_rate_create" xsi:type="object">
+                    Yireo\TaxCommands\Console\Command\TaxRateCreateCommand
+                </item>
+                <item name="yireo_taxcommands_tax_calculation_create" xsi:type="object">
+                    Yireo\TaxCommands\Console\Command\TaxCalculationCreateCommand
+                </item>
+                <item name="yireo_taxcommands_tax_class_list_command" xsi:type="object">
+                    Yireo\TaxCommands\Console\Command\TaxClassListCommand
+                </item>
+                <item name="yireo_taxcommands_tax_calculation_autoapply_command" xsi:type="object">
+                    Yireo\TaxCommands\Console\Command\TaxCalculationAutoapplyCommand
+                </item>
+            </argument>
+        </arguments>
+    </type>
+</config>
