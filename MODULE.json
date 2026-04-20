@@ -1,0 +1,28 @@
+{
+    "module_name": "Yireo_TaxCommands",
+    "composer_name": "yireo/magento2-tax-commands",
+    "sequence": [
+        "Magento_Tax"
+    ],
+    "php_versions": [
+        "8.1",
+        "8.2",
+        "8.3",
+        "8.4"
+    ],
+    "skip_magento_versions": [],
+    "skip_css_utils": false,
+    "modules": [
+        "Magento_Catalog",
+        "Magento_Checkout",
+        "Magento_Customer",
+        "Magento_Directory",
+        "Magento_Tax",
+        "Magento_User"
+    ],
+    "components": [],
+    "config": [],
+    "tests": [],
+    "phpcs_severity": 10,
+    "phpstan_level": 1
+}
