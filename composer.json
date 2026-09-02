@@ -6,7 +6,8 @@
     "require": {
         "magento/framework": "^103.0",
         "magento/module-tax": "^100.4",
-        "symfony/console": "~v6.4.36"
+        "symfony/console": "~v6.4.36",
+        "php": ">=8.2 <8.6"
     },
     "license": [
         "OSL-3.0"
