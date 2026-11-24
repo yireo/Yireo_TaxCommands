@@ -3,54 +3,52 @@ declare(strict_types=1);
 
 namespace Yireo\TaxCommands\Console\Command;
 
-use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Tax\Api\TaxClassRepositoryInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yireo\TaxCommands\Util\SafeCell;
 
 class TaxClassListCommand extends Command
 {
+    /**
+     * @param TaxClassRepositoryInterface $taxClassRepository
+     * @param SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+     * @param SafeCell $safeCell
+     * @param string|null $name
+     */
     public function __construct(
-        private TaxClassRepositoryInterface $taxClassRepository,
-        private SearchCriteriaBuilder $searchCriteriaBuilder,
-        ?string $name = null)  {
+        private readonly TaxClassRepositoryInterface $taxClassRepository,
+        private readonly SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
+        private readonly SafeCell $safeCell,
+        ?string $name = null
+    ) {
         parent::__construct($name);
     }
 
-    /**
-     * Initialization of the command.
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('tax:class:list');
         $this->setDescription('List all tax classes');
         parent::configure();
     }
 
-    /**
-     * CLI command description.
-     *
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     *
-     * @return int
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $searchCriteria = $this->searchCriteriaBuilderFactory->create()->create();
+        $searchResults = $this->taxClassRepository->getList($searchCriteria);
+
         $table = new Table($output);
-        $table->setHeaders(['ID', 'Class', 'Rate']);
+        $table->setHeaders(['ID', 'Class', 'Type']);
 
-        $searchResults = $this->taxClassRepository->getList($this->searchCriteriaBuilder->create());
-        $taxClasses = $searchResults->getItems();
-
-        foreach ($taxClasses as $taxClass) {
-            $table->addRow([
+        foreach ($searchResults->getItems() as $taxClass) {
+            $table->addRow(array_map([$this->safeCell, 'escape'], [
                 $taxClass->getClassId(),
                 $taxClass->getClassName(),
                 $taxClass->getClassType(),
-            ]);
+            ]));
         }
 
         $table->render();
