@@ -55,11 +55,11 @@ class TaxRateCreateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $code = $this->getCode($input->getOption('code'));
-            $rate = $this->getRate($input->getOption('rate'));
-            $countryId = $this->getCountryId($input->getOption('country_id'));
-            $postcode = $this->getPostcode($input->getOption('postcode'));
-            $regionId = $this->getRegionId($input->getOption('region_id'));
+            $code = $this->validateCode($input->getOption('code'));
+            $rate = $this->validateRate($input->getOption('rate'));
+            $countryId = $this->validateCountryId($input->getOption('country_id'));
+            $postcode = $this->validatePostcode($input->getOption('postcode'));
+            $regionId = $this->validateRegionId($input->getOption('region_id'));
         } catch (InvalidArgumentException $exception) {
             $this->writeError($output, $exception->getMessage());
             return Command::INVALID;
@@ -109,7 +109,7 @@ class TaxRateCreateCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function getCode(mixed $value): string
+    private function validateCode(mixed $value): string
     {
         $code = $this->inputValidator->requiredString($value, 'code');
         if (mb_strlen($code) > self::MAX_CODE_LENGTH) {
@@ -121,7 +121,7 @@ class TaxRateCreateCommand extends Command
         return $code;
     }
 
-    private function getRate(mixed $value): float
+    private function validateRate(mixed $value): float
     {
         $rate = $this->inputValidator->requiredString($value, 'rate');
         if (!is_numeric($rate) || (float)$rate < 0 || (float)$rate > 100) {
@@ -131,7 +131,7 @@ class TaxRateCreateCommand extends Command
         return (float)$rate;
     }
 
-    private function getCountryId(mixed $value): string
+    private function validateCountryId(mixed $value): string
     {
         $countryId = strtoupper($this->inputValidator->requiredString($value, 'country_id'));
         if (!preg_match('/^[A-Z]{2}$/', $countryId)) {
@@ -143,13 +143,13 @@ class TaxRateCreateCommand extends Command
         return $countryId;
     }
 
-    private function getPostcode(mixed $value): string
+    private function validatePostcode(mixed $value): string
     {
         $postcode = is_scalar($value) ? trim((string)$value, " \f\n\r\t\v\x00") : '';
         return $postcode === '' ? '*' : $postcode;
     }
 
-    private function getRegionId(mixed $value): int
+    private function validateRegionId(mixed $value): int
     {
         if ($value === null || (is_string($value) && trim($value, " \f\n\r\t\v\x00") === '')) {
             return 0;
