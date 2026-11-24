@@ -23,6 +23,6 @@
     "components": [],
     "config": [],
     "tests": [],
-    "phpcs_severity": "9",
+    "phpcs_severity": "6",
     "phpstan_level": "5"
 }
