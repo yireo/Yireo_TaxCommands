@@ -33,7 +33,6 @@ class TaxCalculationAutoapplyCommand extends Command
      * @param LikeEscaper $likeEscaper
      * @param SafeCell $safeCell
      * @param string|null $name
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
         private readonly TaxRuleRepositoryInterface $taxRuleRepository,

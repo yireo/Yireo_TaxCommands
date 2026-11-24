@@ -36,7 +36,6 @@ class RuleUpdater
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function update(
         string $commandName,
