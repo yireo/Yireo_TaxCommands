@@ -88,7 +88,8 @@ class RuleUpdater
 
             $question = new ConfirmationQuestion(
                 (string)__('Save these changes to tax rule %1? [y/N] ', $ruleId),
-                false
+                false,
+                '/^(y|yes)$/i'
             );
             if (!$this->questionHelper->ask($input, $output, $question)) {
                 $output->writeln('<comment>' . $this->safeCell->escape(__('Aborted.')) . '</comment>');
