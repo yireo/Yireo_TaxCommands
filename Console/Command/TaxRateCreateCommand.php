@@ -20,7 +20,7 @@ use Yireo\TaxCommands\Util\SafeCell;
 class TaxRateCreateCommand extends Command
 {
     private const MAX_CODE_LENGTH = 255;
-    private const MAX_POSTCODE_LENGTH = 21;
+    private const MAX_POSTCODE_LENGTH = 10;
 
     /**
      * @param TaxRateRepositoryInterface $taxRateRepository
@@ -147,7 +147,7 @@ class TaxRateCreateCommand extends Command
     private function validatePostcode(mixed $value): string
     {
         $postcode = is_scalar($value) ? trim((string)$value, " \f\n\r\t\v\x00") : '';
-        if (mb_strlen($postcode) > self::MAX_POSTCODE_LENGTH) {
+        if (strlen($postcode) > self::MAX_POSTCODE_LENGTH) {
             throw new InvalidArgumentException(
                 (string)__('Option "--postcode" must not be longer than %1 characters.', self::MAX_POSTCODE_LENGTH)
             );
