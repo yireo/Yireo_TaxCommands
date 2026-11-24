@@ -22,4 +22,25 @@
             </argument>
         </arguments>
     </type>
+
+    <virtualType name="Yireo\TaxCommands\Logger\Handler" type="Magento\Framework\Logger\Handler\Base">
+        <arguments>
+            <argument name="fileName" xsi:type="string">/var/log/yireo_tax_commands.log</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="Yireo\TaxCommands\Logger\Logger" type="Monolog\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">yireo_tax_commands</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="system" xsi:type="object">Yireo\TaxCommands\Logger\Handler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Yireo\TaxCommands\Logger\ChangeLogger">
+        <arguments>
+            <argument name="logger" xsi:type="object">Yireo\TaxCommands\Logger\Logger</argument>
+        </arguments>
+    </type>
 </config>
