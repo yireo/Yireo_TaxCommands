@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Yireo\TaxCommands\Console\Command;
 
 use InvalidArgumentException;
+use Magento\Directory\Model\RegionFactory;
+use Magento\Directory\Model\ResourceModel\Region as RegionResource;
 use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\LocalizedException;
@@ -28,6 +30,8 @@ class TaxRateCreateCommand extends Command
      * @param InputValidator $inputValidator
      * @param SafeCell $safeCell
      * @param ChangeLogger $changeLogger
+     * @param RegionFactory $regionFactory
+     * @param RegionResource $regionResource
      * @param string|null $name
      */
     public function __construct(
@@ -36,6 +40,8 @@ class TaxRateCreateCommand extends Command
         private readonly InputValidator $inputValidator,
         private readonly SafeCell $safeCell,
         private readonly ChangeLogger $changeLogger,
+        private readonly RegionFactory $regionFactory,
+        private readonly RegionResource $regionResource,
         ?string $name = null
     ) {
         parent::__construct($name);
@@ -60,7 +66,7 @@ class TaxRateCreateCommand extends Command
             $rate = $this->validateRate($input->getOption('rate'));
             $countryId = $this->validateCountryId($input->getOption('country_id'));
             $postcode = $this->validatePostcode($input->getOption('postcode'));
-            $regionId = $this->validateRegionId($input->getOption('region_id'));
+            $regionId = $this->validateRegionId($input->getOption('region_id'), $countryId);
         } catch (InvalidArgumentException $exception) {
             $this->writeError($output, $exception->getMessage());
             return Command::INVALID;
@@ -156,13 +162,30 @@ class TaxRateCreateCommand extends Command
         return $postcode === '' ? '*' : $postcode;
     }
 
-    private function validateRegionId(mixed $value): int
+    private function validateRegionId(mixed $value, string $countryId): int
     {
         if ($value === null || (is_string($value) && trim($value, " \f\n\r\t\v\x00") === '')) {
             return 0;
         }
 
-        return $this->inputValidator->nonNegativeInt($value, 'region_id');
+        $regionId = $this->inputValidator->nonNegativeInt($value, 'region_id');
+        if ($regionId === 0) {
+            return 0;
+        }
+
+        $region = $this->regionFactory->create();
+        $this->regionResource->load($region, $regionId);
+        if (!$region->getId()) {
+            throw new InvalidArgumentException((string)__('Region with ID %1 does not exist.', $regionId));
+        }
+
+        if (strtoupper((string)$region->getCountryId()) !== $countryId) {
+            throw new InvalidArgumentException(
+                (string)__('Region with ID %1 does not belong to country %2.', $regionId, $countryId)
+            );
+        }
+
+        return $regionId;
     }
 
     private function writeError(OutputInterface $output, string $message): void

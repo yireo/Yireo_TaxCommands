@@ -2,6 +2,7 @@
     "module_name": "Yireo_TaxCommands",
     "composer_name": "yireo/magento2-tax-commands",
     "sequence": [
+        "Magento_Directory",
         "Magento_Tax"
     ],
     "php_versions": [
