@@ -15,6 +15,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 use Yireo\TaxCommands\Logger\ChangeLogger;
 use Yireo\TaxCommands\Util\InputValidator;
 use Yireo\TaxCommands\Util\SafeCell;
@@ -100,15 +101,21 @@ class TaxRateCreateCommand extends Command
         }
 
         $rateId = (int)$taxRate->getId();
-        $this->changeLogger->logRateCreated(
-            (string)$this->getName(),
-            $rateId,
-            $code,
-            $rate,
-            $countryId,
-            $postcode,
-            $regionId
-        );
+        try {
+            $this->changeLogger->logRateCreated(
+                (string)$this->getName(),
+                $rateId,
+                $code,
+                $rate,
+                $countryId,
+                $postcode,
+                $regionId
+            );
+        } catch (Throwable $exception) {
+            $output->writeln('<comment>' . $this->safeCell->escape(
+                __('Change saved, but writing the change log failed: %1', $exception->getMessage())
+            ) . '</comment>');
+        }
         $output->writeln(
             '<info>' . $this->safeCell->escape(__('Tax rate created with ID %1.', $rateId)) . '</info>'
         );

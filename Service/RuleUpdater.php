@@ -11,6 +11,7 @@ use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Throwable;
 use Yireo\TaxCommands\Logger\ChangeLogger;
 use Yireo\TaxCommands\Util\SafeCell;
 
@@ -108,7 +109,13 @@ class RuleUpdater
             return Command::FAILURE;
         }
 
-        $this->changeLogger->logRuleChange($commandName, $ruleId, $before, $after);
+        try {
+            $this->changeLogger->logRuleChange($commandName, $ruleId, $before, $after);
+        } catch (Throwable $exception) {
+            $output->writeln('<comment>' . $this->safeCell->escape(
+                __('Change saved, but writing the change log failed: %1', $exception->getMessage())
+            ) . '</comment>');
+        }
         $output->writeln('<info>' . $this->safeCell->escape(__('Tax rule %1 has been saved.', $ruleId)) . '</info>');
 
         return Command::SUCCESS;
