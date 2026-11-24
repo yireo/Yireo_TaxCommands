@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace Yireo\TaxCommands\Test\Integration\Console\Command;
 
+use Magento\Directory\Model\RegionFactory;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Tax\Api\Data\TaxRateInterface;
 use Magento\Tax\Api\TaxRateRepositoryInterface;
-use Magento\TestFramework\Fixture\AppIsolation;
-use Magento\TestFramework\Fixture\DbIsolation;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Command\Command;
@@ -17,10 +16,11 @@ use Yireo\TaxCommands\Console\Command\TaxRateCreateCommand;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-#[DbIsolation(true)]
-#[AppIsolation(true)]
 class TaxRateCreateCommandTest extends TaxCommandTestCase
 {
+    /**
+     * @dataProvider invalidOptions
+     */
     #[DataProvider('invalidOptions')]
     public function testRejectsInvalidOption(string $option, string $value, string $message): void
     {
@@ -65,6 +65,40 @@ class TaxRateCreateCommandTest extends TaxCommandTestCase
         self::assertStringContainsString("Tax rate created with ID $rateId.", $tester->getDisplay());
     }
 
+    public function testRejectsPostcodeLongerThanTenCharacters(): void
+    {
+        $code = $this->uniqueCode('long-postcode');
+        $tester = $this->tester(TaxRateCreateCommand::class);
+        $input = $this->input($code) + ['--postcode' => '12345678901'];
+
+        self::assertSame(Command::INVALID, $tester->execute($input, ['interactive' => false]));
+        self::assertCount(0, $this->findRates($code));
+    }
+
+    public function testRejectsRegionFromAnotherCountry(): void
+    {
+        $code = $this->uniqueCode('foreign-region');
+        $tester = $this->tester(TaxRateCreateCommand::class);
+        $input = $this->input($code) + ['--region_id' => (string)$this->getCaliforniaRegionId()];
+
+        self::assertSame(Command::INVALID, $tester->execute($input, ['interactive' => false]));
+        self::assertCount(0, $this->findRates($code));
+    }
+
+    public function testAcceptsRegionFromSelectedCountry(): void
+    {
+        $code = $this->uniqueCode('valid-region');
+        $regionId = $this->getCaliforniaRegionId();
+        $tester = $this->tester(TaxRateCreateCommand::class);
+        $input = ['--country_id' => 'US', '--region_id' => (string)$regionId] + $this->input($code);
+
+        self::assertSame(Command::SUCCESS, $tester->execute($input, ['interactive' => false]));
+        $rates = $this->findRates($code);
+        self::assertCount(1, $rates);
+        self::assertSame('US', $rates[0]->getTaxCountryId());
+        self::assertSame($regionId, (int)$rates[0]->getTaxRegionId());
+    }
+
     public function testDuplicateCodeReturnsFailureWithoutReplacingRate(): void
     {
         $code = $this->uniqueCode('duplicate-rate');
@@ -77,6 +111,15 @@ class TaxRateCreateCommandTest extends TaxCommandTestCase
         self::assertCount(1, $rates);
         self::assertSame($originalRateId, (int)$rates[0]->getId());
         self::assertSame(9.5, (float)$rates[0]->getRate());
+    }
+
+    private function getCaliforniaRegionId(): int
+    {
+        $regionFactory = Bootstrap::getObjectManager()->get(RegionFactory::class);
+        $regionId = (int)$regionFactory->create()->loadByCode('CA', 'US')->getId();
+        self::assertGreaterThan(0, $regionId);
+
+        return $regionId;
     }
 
     /**

@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Yireo\TaxCommands\Test\Integration\Console\Command;
 
 use Magento\Tax\Api\TaxClassManagementInterface;
-use Magento\TestFramework\Fixture\AppIsolation;
-use Magento\TestFramework\Fixture\DbIsolation;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Command\Command;
 use Yireo\TaxCommands\Console\Command\TaxCalculationAutoapplyCommand;
@@ -14,8 +12,6 @@ use Yireo\TaxCommands\Console\Command\TaxCalculationAutoapplyCommand;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-#[DbIsolation(true)]
-#[AppIsolation(true)]
 class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
 {
     private int $customerId;
@@ -41,6 +37,9 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
         self::assertStringContainsString('Tax rule with ID 999999 does not exist.', $tester->getDisplay());
     }
 
+    /**
+     * @dataProvider blankKeywords
+     */
     #[DataProvider('blankKeywords')]
     public function testRejectsBlankKeyword(string $keyword): void
     {
@@ -63,16 +62,38 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
         ];
     }
 
-    public function testPercentKeywordDoesNotMatchEveryRate(): void
+    /**
+     * @dataProvider likeWildcards
+     */
+    #[DataProvider('likeWildcards')]
+    public function testAutoapplyMatchesLikeWildcardsLiterally(string $wildcard, string $decoyCharacter): void
     {
         $tester = $this->tester(TaxCalculationAutoapplyCommand::class);
         $this->createBaselineRule();
-        $this->createRate($this->uniqueCode('not-a-percent'));
-        $input = $this->input('%') + ['--force' => true];
+        $prefix = $this->uniqueCode('literal-wildcard');
+        $keyword = $prefix . '-a' . $wildcard . 'b';
+        $literalRateId = $this->createRate($keyword);
+        $this->createRate($prefix . '-a' . $decoyCharacter . 'b');
+        $input = $this->input($keyword) + ['--force' => true];
 
-        self::assertSame(Command::FAILURE, $tester->execute($input, ['interactive' => false]));
-        self::assertStringContainsString('No tax rates found', $tester->getDisplay());
-        $this->assertBaselineRule();
+        self::assertSame(Command::SUCCESS, $tester->execute($input, ['interactive' => false]));
+        $this->assertPersistedRule(
+            $this->ruleId,
+            [$this->customerId],
+            [$this->productId],
+            [$this->originalRateId, $literalRateId]
+        );
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function likeWildcards(): array
+    {
+        return [
+            'percent' => ['%', 'x'],
+            'underscore' => ['_', 'c'],
+        ];
     }
 
     public function testForcePreservesExistingCustomerAndProductClasses(): void
@@ -109,6 +130,9 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
         );
     }
 
+    /**
+     * @dataProvider saveDecisions
+     */
     #[DataProvider('saveDecisions')]
     public function testSaveDecision(
         bool $interactive,
@@ -116,7 +140,7 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
         bool $dryRun,
         bool $force,
         int $status,
-        string $message,
+        ?string $message,
         bool $saved
     ): void {
         $this->createBaselineRule();
@@ -140,7 +164,9 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
             "rate IDs [{$this->originalRateId}] -> [{$this->originalRateId},{$rateId}]",
             $display
         );
-        self::assertStringContainsString($message, $display);
+        if ($message !== null) {
+            self::assertStringContainsString($message, $display);
+        }
         if ($interactive) {
             self::assertStringContainsString('Save these changes', $display);
         }
@@ -153,7 +179,7 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
     }
 
     /**
-     * @return array<string, array{bool, ?string, bool, bool, int, string, bool}>
+     * @return array<string, array{bool, ?string, bool, bool, int, ?string, bool}>
      */
     public static function saveDecisions(): array
     {
@@ -163,6 +189,7 @@ class TaxCalculationAutoapplyCommandTest extends TaxCommandTestCase
             'interactive yes' => [true, 'y', false, false, Command::SUCCESS, 'has been saved.', true],
             'interactive no' => [true, 'no', false, false, Command::FAILURE, 'Aborted.', false],
             'interactive default' => [true, '', false, false, Command::FAILURE, 'Aborted.', false],
+            'interactive yep' => [true, 'yep', false, false, Command::FAILURE, null, false],
         ];
     }
 

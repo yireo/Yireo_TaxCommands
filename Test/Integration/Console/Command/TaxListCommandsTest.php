@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Yireo\TaxCommands\Test\Integration\Console\Command;
 
 use Magento\Tax\Api\TaxClassManagementInterface;
-use Magento\TestFramework\Fixture\AppIsolation;
-use Magento\TestFramework\Fixture\DbIsolation;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Yireo\TaxCommands\Console\Command\TaxClassListCommand;
@@ -15,8 +13,6 @@ use Yireo\TaxCommands\Console\Command\TaxRateListCommand;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-#[DbIsolation(true)]
-#[AppIsolation(true)]
 class TaxListCommandsTest extends TaxCommandTestCase
 {
     private const LINK_TEXT = '<href=http://x>evil</>';

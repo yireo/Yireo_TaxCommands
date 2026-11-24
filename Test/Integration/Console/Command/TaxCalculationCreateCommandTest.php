@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Yireo\TaxCommands\Test\Integration\Console\Command;
 
 use Magento\Tax\Api\TaxClassManagementInterface;
-use Magento\TestFramework\Fixture\AppIsolation;
-use Magento\TestFramework\Fixture\DbIsolation;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Command\Command;
 use Yireo\TaxCommands\Console\Command\TaxCalculationCreateCommand;
@@ -14,8 +12,6 @@ use Yireo\TaxCommands\Console\Command\TaxCalculationCreateCommand;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-#[DbIsolation(true)]
-#[AppIsolation(true)]
 class TaxCalculationCreateCommandTest extends TaxCommandTestCase
 {
     private int $customerId;
@@ -38,6 +34,9 @@ class TaxCalculationCreateCommandTest extends TaxCommandTestCase
         $this->ruleId = $this->createRule([$this->customerId], [$this->productId], [$this->rateId]);
     }
 
+    /**
+     * @dataProvider invalidIds
+     */
     #[DataProvider('invalidIds')]
     public function testRejectsInvalidId(string $option, string $value): void
     {
